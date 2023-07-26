@@ -1,0 +1,26 @@
+
+===>>> Kode Transaksi: 22012742 <<<===
+
+Nama Pelanggan : faizal
+Tanggal Transaksi: 2023/07/10 06:34:14
+No HP Pelanggan  : 082312312331
+Daftar Pembelian :
+
+0 item, total belanja Rp.0.0
+Uang Pembeli: Rp.2000.0
+Kembalian   : Rp.2000.0
+----------------------------------------
+
+===>>> Kode Transaksi: 59227646 <<<===
+
+Nama Pelanggan : faizal
+Tanggal Transaksi: 2023/07/10 06:54:50
+No HP Pelanggan  : 08231312321321
+Daftar Pembelian :
+- Makanan Coto Makassar (Harga: 25000.0, Jumlah: 4, Total: 100000.0)
+- Makanan Sate Ayam (Harga: 18000.0, Jumlah: 5, Total: 90000.0)
+
+2 item, total belanja Rp.190000.0
+Uang Pembeli: Rp.200000.0
+Kembalian   : Rp.10000.0
+----------------------------------------

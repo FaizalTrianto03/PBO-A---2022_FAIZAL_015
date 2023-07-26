@@ -1,0 +1,13 @@
+Makanan Nasi Goreng, 20000.00
+Minuman Jus Alpukat, 10000.00
+Makanan Mie Ayam, 15000.00
+Makanan Gado-Gado, 12000.00
+Makanan Sate Ayam, 18000.00
+Makanan Coto Makassar, 25000.00
+Makanan Rendang, 25000.00
+Makanan Tahu Telor, 15000.00
+Minuman Teh Manis, 5000.00
+Minuman Es Jeruk, 8000.00
+Minuman Es Teh, 6000.00
+Minuman Kopi Hitam, 7000.00
+Minuman Avocado, 15000.00
