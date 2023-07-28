@@ -1,5 +1,11 @@
 import java.util.Map;
 import java.util.Scanner;
+import java.io.File;
+import java.io.FileNotFoundException;
+import java.util.*;
+import java.io.FileWriter;
+import java.io.IOException;
+import java.io.PrintWriter;
 
 public class Program {
     private CoffeeShop coffeeShop;
@@ -155,13 +161,58 @@ public class Program {
 
             coffeeShop.addCustomer(new Customer(customerName, customerEmail, customerPhoneNumber));
             coffeeShop.saveData("Data_Pembeli.txt");
-
         }
 
         // Mengumpulkan data pembelian
         Map<String, Integer> purchasedItems = TransaksiJualan.collectPurchasedItems(menu);
 
         double totalAmount = TransaksiJualan.performTransaction(purchasedItems, menu); // Memanggil metode performTransaction dari TransaksiJualan
+        System.out.print("Punya voucer diskon? (y/t) : ");
+        String KonfirmasiVoucher = scanner.nextLine();
+
+        if (KonfirmasiVoucher.equals("y")) {
+            System.out.print("Masukkan kode voucher : ");
+            String voucherCode = scanner.nextLine();
+
+            // Mengecek ke file kodevoucher apakah ada kode yang sama
+            double diskon = 0.0;
+            try {
+                File file = new File("kodevoucher.txt");
+                Scanner fileScanner = new Scanner(file);
+                ArrayList<String> voucherList = new ArrayList<>();
+
+                while (fileScanner.hasNextLine()) {
+                    String line = fileScanner.nextLine();
+                    String[] data = line.split(",");
+                    if (data[0].equals(voucherCode)) {
+                        diskon = Double.parseDouble(data[1]);
+                    } else {
+                        voucherList.add(line); // Menambahkan voucher ke ArrayList jika bukan voucher yang digunakan
+                    }
+                }
+                fileScanner.close();
+
+                // Menyimpan sisa voucher ke file "kodevoucher.txt"
+                try (PrintWriter voucherWriter = new PrintWriter(new FileWriter("kodevoucher.txt"))) {
+                    for (String voucher : voucherList) {
+                        voucherWriter.println(voucher);
+                    }
+                } catch (IOException e) {
+                    System.out.println("Gagal menyimpan data voucher.");
+                }
+            } catch (FileNotFoundException e) {
+                System.out.println("File kodevoucher.txt tidak ditemukan.");
+            }
+
+
+            // Menghitung totalAmount dengan diskon
+            double totalAmountAfterDiscount = totalAmount - (totalAmount * diskon);
+            System.out.println("Total Amount setelah diskon: " + totalAmountAfterDiscount);
+            totalAmount = totalAmountAfterDiscount; // Update totalAmount dengan totalAmount setelah diskon
+        } else {
+            System.out.println("Total Amount: " + totalAmount);
+        }
+
         System.out.print("Total Uang Pelanggan: ");
         double paymentAmount = scanner.nextDouble();
         scanner.nextLine();
@@ -177,8 +228,9 @@ public class Program {
 
             // Save transaction data to the file
             String receiptCode = TransaksiJualan.generateReceiptCode();
-            TransaksiJualan.saveTransactionData(receiptCode, customerName, customerPhoneNumber, paymentAmount, purchasedItems, menu);
-            coffeeShop.saveTransactionDataCustomer(receiptCode, customerName, customerPhoneNumber, paymentAmount, purchasedItems, menu);
+            String voucherCode = TransaksiJualan.generateVoucherCode();
+            TransaksiJualan.saveTransactionData(receiptCode,voucherCode, customerName, customerPhoneNumber,totalAmount, paymentAmount, changeAmount, purchasedItems, menu);
+            coffeeShop.saveTransactionDataCustomer(receiptCode,voucherCode, customerName, customerPhoneNumber,totalAmount, paymentAmount, changeAmount, purchasedItems, menu);
             TransaksiJualan.displayTransactionHistory("Riwayat_Transaksi.txt", receiptCode);
         }
     }

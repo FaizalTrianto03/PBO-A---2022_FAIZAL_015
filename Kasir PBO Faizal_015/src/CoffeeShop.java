@@ -149,19 +149,24 @@ public class CoffeeShop {
     }
 
 
-    public static void saveTransactionDataCustomer(String receiptCode, String customerName, String customerNoTelp, double uangBayar, Map<String, Integer> purchasedItems, Map<String, Double> menu) {
-        DateTimeFormatter dtf = DateTimeFormatter.ofPattern("yyyy/MM/dd HH:mm:ss");
+    public static void saveTransactionDataCustomer(String receiptCode,String voucherCode, String customerName, String customerNoTelp, double totalAmount, double paymentAmount, double changeAmount, Map<String, Integer> purchasedItems, Map<String, Double> menu) {
+        DateTimeFormatter dtf = DateTimeFormatter.ofPattern("yyyy/MM/dd (HH:mm:ss)");
         LocalDateTime now = LocalDateTime.now();
         String transactionDate = dtf.format(now);
 
         try (PrintWriter writer = new PrintWriter(new FileWriter("Riwayat_Transaksi_Customers.txt", true))) {
             writer.println(customerName + "(" + customerNoTelp + ")");
             writer.println("\n===>>> Kode Transaksi: " + receiptCode + " <<<===");
-            writer.println("\nNama Pelanggan : " + customerName);
+            writer.println("\nNama Pelanggan   : " + customerName);
             writer.println("Tanggal Transaksi: " + transactionDate);
             writer.println("No HP Pelanggan  : " + customerNoTelp);
             writer.println("Daftar Pembelian :");
-            double totalAmount = 0.0;
+
+            // Menghitung lebar kolom berdasarkan data terpanjang
+            int maxItemLength = "Item".length();
+            int maxHargaLength = "Harga".length();
+            int maxJumlahLength = "Jumlah".length();
+            int maxTotalLength = "Total".length();
 
             for (Map.Entry<String, Integer> entry : purchasedItems.entrySet()) {
                 String itemName = entry.getKey();
@@ -169,15 +174,51 @@ public class CoffeeShop {
                 double itemPrice = menu.get(itemName);
                 double totalPrice = itemPrice * quantity;
 
-                writer.println("- " + itemName + " (Harga: " + itemPrice + ", Jumlah: " + quantity + ", Total: " + totalPrice + ")");
-                totalAmount += totalPrice;
+                maxItemLength = Math.max(maxItemLength, itemName.length());
+                maxHargaLength = Math.max(maxHargaLength, String.format("%.0f", itemPrice).length());
+                maxJumlahLength = Math.max(maxJumlahLength, String.valueOf(quantity).length());
+                maxTotalLength = Math.max(maxTotalLength, String.format("%.0f", totalPrice).length());
             }
+
+            // Cetak header tabel
+            String headerFormat = "| %-" + maxItemLength + "s | %-" + maxHargaLength + "s | %-" + maxJumlahLength + "s | %-" + maxTotalLength + "s |";
+            writer.println("\n" + String.format(headerFormat, "Item", "Harga", "Jumlah", "Total"));
+            writer.println("|" + "-".repeat(maxItemLength + 2) + "|" + "-".repeat(maxHargaLength + 2) + "|" + "-".repeat(maxJumlahLength + 2) + "|" + "-".repeat(maxTotalLength + 2) + "|");
+
+            // Cetak detail pembelian
+            for (Map.Entry<String, Integer> entry : purchasedItems.entrySet()) {
+                String itemName = entry.getKey();
+                int quantity = entry.getValue();
+                double itemPrice = menu.get(itemName);
+                double totalPrice = itemPrice * quantity;
+
+                String formattedItemPrice = String.format("%d", (int) itemPrice);
+                String formattedQuantity = String.format("%d", quantity);
+                String formattedTotalPrice = String.format("%d", (int) totalPrice);
+
+                writer.println("| " + String.format("%-" + maxItemLength + "s", itemName) + " | " +
+                        String.format("%" + maxHargaLength + "s", formattedItemPrice) + " | " +
+                        String.format("%" + maxJumlahLength + "s", quantity) + " | " +
+                        String.format("%" + maxTotalLength + "s", formattedTotalPrice) + " |");
+
+            }
+
+            writer.println("|" + "-".repeat(maxItemLength + 2) + "|" + "-".repeat(maxHargaLength + 2) + "|" + "-".repeat(maxJumlahLength + 2) + "|" + "-".repeat(maxTotalLength + 2) + "|");
             writer.println("\n" + purchasedItems.size() + " item, total belanja Rp." + totalAmount);
-            writer.println("Uang Pelanggan: Rp." + uangBayar);
-            writer.println("Kembalian     : Rp." + (uangBayar - totalAmount));
+            writer.println("Uang Pelanggan: Rp." + paymentAmount);
+            writer.println("Kembalian     : Rp." + changeAmount);
+
+            // Menghitung diskon dan menyimpan kode voucher jika total belanjaan lebih dari 250 ribu
+            if (totalAmount >= 250000) {
+
+            writer.println("\nSelamat, anda mendapatkan voucher diskon!");
+            writer.println("Kode Voucher: " + voucherCode);
+
+            }
             writer.println("----------------------------------------");
         } catch (IOException e) {
             System.out.println("\n<<Terjadi kesalahan selama proses penyimpanan data!>>");
         }
     }
+
 }

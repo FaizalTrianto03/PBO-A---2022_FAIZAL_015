@@ -105,18 +105,23 @@ public class TransaksiJualan {
         System.out.println("Thank you, " + customerName + " for your purchase!");
     }
 
-    public static void saveTransactionData(String receiptCode, String customerName, String customerNoTelp, double Uang_bayar, Map<String, Integer> purchasedItems, Map<String, Double> menu) {
-        DateTimeFormatter dtf = DateTimeFormatter.ofPattern("yyyy/MM/dd HH:mm:ss");
+    public static void saveTransactionData(String receiptCode,String voucherCode, String customerName, String customerNoTelp, double totalAmount, double paymentAmount, double changeAmount, Map<String, Integer> purchasedItems, Map<String, Double> menu) {
+        DateTimeFormatter dtf = DateTimeFormatter.ofPattern("yyyy/MM/dd (HH:mm:ss)");
         LocalDateTime now = LocalDateTime.now();
         String transactionDate = dtf.format(now);
+        int totalasli = 0;
 
         try (PrintWriter writer = new PrintWriter(new FileWriter("Riwayat_Transaksi.txt", true))) {
             writer.println("\n===>>> Kode Transaksi: " + receiptCode + " <<<===");
-            writer.println("\nNama Pelanggan : " + customerName);
+            writer.println("\nNama Pelanggan   : " + customerName);
             writer.println("Tanggal Transaksi: " + transactionDate);
             writer.println("No HP Pelanggan  : " + customerNoTelp);
-            writer.println("Daftar Pembelian :");
-            double totalAmount = 0.0;
+
+            // Menghitung lebar kolom berdasarkan data terpanjang
+            int maxItemLength = "Item".length();
+            int maxHargaLength = "Harga".length();
+            int maxJumlahLength = "Jumlah".length();
+            int maxTotalLength = "Total".length();
 
             for (Map.Entry<String, Integer> entry : purchasedItems.entrySet()) {
                 String itemName = entry.getKey();
@@ -124,17 +129,76 @@ public class TransaksiJualan {
                 double itemPrice = menu.get(itemName);
                 double totalPrice = itemPrice * quantity;
 
-                writer.println("- " + itemName + " (Harga: " + itemPrice + ", Jumlah: " + quantity + ", Total: " + totalPrice + ")");
-                totalAmount += totalPrice;
+
+                maxItemLength = Math.max(maxItemLength, itemName.length());
+                maxHargaLength = Math.max(maxHargaLength, String.valueOf(itemPrice).length());
+                maxJumlahLength = Math.max(maxJumlahLength, String.valueOf(quantity).length());
+                maxTotalLength = Math.max(maxTotalLength, String.valueOf(totalPrice).length());
             }
-            writer.println("\n" + purchasedItems.size() + " item, total belanja Rp." + totalAmount );
-            writer.println("Uang Pembeli: Rp." + Uang_bayar);
-            writer.println("Kembalian   : Rp." + (Uang_bayar - totalAmount));
+
+            // Cetak header tabel
+            String headerFormat = "| %-" + maxItemLength + "s | %-" + maxHargaLength + "s | %-" + maxJumlahLength + "s | %-" + maxTotalLength + "s |";
+            writer.println("\n" + String.format(headerFormat, "Item", "Harga", "Jumlah", "Total"));
+            writer.println("|" + "-".repeat(maxItemLength + 2) + "|" + "-".repeat(maxHargaLength + 2) + "|" + "-".repeat(maxJumlahLength + 2) + "|" + "-".repeat(maxTotalLength + 2) + "|");
+
+
+            // Cetak detail pembelian
+            for (Map.Entry<String, Integer> entry : purchasedItems.entrySet()) {
+                String itemName = entry.getKey();
+                int quantity = entry.getValue();
+                double itemPrice = menu.get(itemName);
+                double totalPrice = itemPrice * quantity;
+
+
+                String formattedItemPrice = String.format("%d", (int) itemPrice);
+                String formattedQuantity = String.format("%d", quantity);
+                String formattedTotalPrice = String.format("%d", (int) totalPrice);
+
+                writer.println("| " + String.format("%-" + maxItemLength + "s", itemName) + " | " +
+                        String.format("%" + maxHargaLength + "s", formattedItemPrice) + " | " +
+                        String.format("%" + maxJumlahLength + "s", formattedQuantity) + " | " +
+                        String.format("%" + maxTotalLength + "s", formattedTotalPrice) + " |");
+                totalasli += totalPrice;
+            }
+
+            writer.println("|" + "-".repeat(maxItemLength + 2) + "|" + "-".repeat(maxHargaLength + 2) + "|" + "-".repeat(maxJumlahLength + 2) + "|" + "-".repeat(maxTotalLength + 2) + "|");
+            writer.println("\n" + purchasedItems.size() + " item, total belanja Rp. " + totalAmount);
+            writer.println("Uang Pelanggan: Rp. " + paymentAmount);
+            writer.println("Kembalian     : Rp. " + changeAmount);
+
+
+            // Menghitung diskon dan menyimpan kode voucher jika total belanjaan lebih dari 250 ribu
+            if (totalasli >= 250000) {
+                double diskon = (totalasli / 250000) * 0.025; // Diskon sebesar 2.5% dari total belanja
+
+                // Simpan kode voucher dan besar diskon ke file "kodevoucher.txt"
+                try (PrintWriter voucherWriter = new PrintWriter(new FileWriter("kodevoucher.txt", true))) {
+                    voucherWriter.println(voucherCode + "," + diskon);
+                    writer.println("\nSelamat, anda mendapatkan voucher diskon!");
+                    writer.println("Kode Voucher: " + voucherCode);
+                } catch (IOException e) {
+                    System.out.println("Gagal menyimpan data kode voucher.");
+                }
+            }
             writer.println("----------------------------------------");
         } catch (IOException e) {
-            System.out.println("Error occurred while saving the transaction data.");
+            System.out.println("Terjadi kesalahan saat menyimpan data transaksi.");
         }
     }
+
+    public static String generateVoucherCode() {
+        String characters = "ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789";
+        StringBuilder code = new StringBuilder();
+
+        Random random = new Random();
+        for (int i = 0; i < 6; i++) {
+            int index = random.nextInt(characters.length());
+            code.append(characters.charAt(index));
+        }
+
+        return code.toString();
+    }
+
 
     public static String generateReceiptCode() {
         Random random = new Random();
@@ -165,7 +229,7 @@ public class TransaksiJualan {
             }
             scanner.close();
         } catch (FileNotFoundException e) {
-            System.out.println("Failed to display transaction history: " + e.getMessage());
+            System.out.println("Gagal menampilkan riwayat transaksi : " + e.getMessage());
         }
     }
 
